@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav>
+    <h1>DUT Shuttle</h1>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+        <li><a href="{{ url_for('find_ride') }}">Find Ride</a></li>
+        <li><a href="{{ url_for('notifications') }}">Notifications</a></li>
+        <li><a href="{{ url_for('profile') }}">Profile</a></li>
+        <li><a href="{{ url_for('report') }}">Report</a></li>
+        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+</nav>  
+    <title>Campus Carpool Report</title>
+    {% if user_role == 'Driver' %}
+    <h2 style="text-align:center; color:#4e79a7;">{{ user_name }}'s Driver Report</h2>
+{% else %}
+    <h2 style="text-align:center; color:#4e79a7;">{{ user_name }}'s Passenger Report</h2>
+{% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 40px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        canvas {
+            max-width: 600px;
+            margin: auto;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+
+<div class="section">
+    <h2>Summary</h2>
+    {% if user_role == 'Driver' %}
+    <p><b>Total Rides Offered:</b> {{ total_bookings }}</p>
+    <p><b>Estimated CO₂ Reduction:</b> {{ co2_reduction }} kg</p>
+{% else %}
+    <p><b>Total Rides Booked:</b> {{ total_bookings }}</p>
+    <p><b>Total Rides Shared:</b> {{ rides_shared }}</p>
+    <p><b>Average Cost Savings:</b> {{ avg_cost_savings }}%</p>
+    <p><b>Estimated CO₂ Reduction:</b> {{ co2_reduction }} kg</p>
+{% endif %}
+</div>
+
+<div class="section">
+    <h2>Ride Time Patterns</h2>
+    <canvas id="usageChart"></canvas>
+</div>
+
+<div class="section">
+    <h2>Recurring Routes</h2>
+    <canvas id="routeChart"></canvas>
+</div>
+
+<script>
+    // Data from Flask
+    let shuttleUsage = {{ shuttle_usage | tojson }};
+    let routes = {{ recurring_routes | tojson }};
+
+    // Shuttle usage chart (pie chart)
+    new Chart(document.getElementById("usageChart"), {
+    type: "pie",
+    data: {
+        labels: [
+            'Morning (5:00-11:59)',
+            'Afternoon (12:00-17:59)',
+            'Evening (18:00-20:59)',
+            'Night (21:00-4:59)'
+        ],
+        datasets: [{
+            label: "Shuttle Usage",
+            data: [
+                shuttleUsage['Morning'] || 0,
+                shuttleUsage['Afternoon'] || 0,
+                shuttleUsage['Evening'] || 0,
+                shuttleUsage['Night'] || 0
+            ],
+            backgroundColor: ['#f6c90e', '#3a86ff', '#ff6b6b', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+
+    // Recurring routes chart (bar chart)
+    new Chart(document.getElementById("routeChart"), {
+        type: "bar",
+        data: {
+            labels: Object.keys(routes),
+            datasets: [{
+                label: "Route Frequency",
+                data: Object.values(routes),
+                backgroundColor: '#4e79a7'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Number of Rides' } },
+                x: { title: { display: true, text: 'Route' } }
+            }
+        }
+    });
+</script>
+
+
+</body>
+</html> 
